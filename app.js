@@ -16,6 +16,10 @@ const elements = {
   iframeContainer: null,
   workflowIframe: null,
   backBtn: null,
+  sessionStatus: null,
+  statusIndicator: null,
+  statusText: null,
+  testingTools: null,
 };
 
 /**
@@ -46,6 +50,10 @@ function cacheElements() {
   elements.iframeContainer = document.getElementById("iframeContainer");
   elements.workflowIframe = document.getElementById("workflowIframe");
   elements.backBtn = document.getElementById("backBtn");
+  elements.sessionStatus = document.getElementById("sessionStatus");
+  elements.statusIndicator = document.getElementById("statusIndicator");
+  elements.statusText = document.getElementById("statusText");
+  elements.testingTools = document.getElementById("testingTools");
 }
 
 /**
@@ -75,6 +83,8 @@ function setupEventListeners() {
  */
 async function checkExistingSession() {
   try {
+    updateSessionStatus("checking", "Checking session...");
+
     const response = await axios.get(PROXY_SESSION_ENDPOINT, {
       ...DEFAULT_AXIOS_CONFIG,
       timeout: APP_CONFIG.TIMEOUTS.SESSION_CHECK,
@@ -83,11 +93,16 @@ async function checkExistingSession() {
     if (response.status === 200 && response.data.success) {
       console.log("Existing session found, showing workflow iframe");
       isAuthenticated = true;
+      updateSessionStatus("authenticated", "Session active");
+      showTestingTools();
       showWorkflowIframe();
+    } else {
+      updateSessionStatus("unauthenticated", "No active session");
     }
   } catch (error) {
     console.log("No existing session found, showing welcome screen");
-    // This is expected behavior, user needs to login
+    updateSessionStatus("unauthenticated", "No active session");
+    showTestingTools();
   }
 }
 
@@ -336,6 +351,146 @@ if (document.readyState === "loading") {
   initializeApp();
 }
 
+/**
+ * Update session status display
+ */
+function updateSessionStatus(status, message) {
+  if (
+    !elements.sessionStatus ||
+    !elements.statusIndicator ||
+    !elements.statusText
+  )
+    return;
+
+  // Remove existing status classes
+  elements.sessionStatus.classList.remove("authenticated", "unauthenticated");
+
+  switch (status) {
+    case "authenticated":
+      elements.sessionStatus.classList.add("authenticated");
+      elements.statusIndicator.textContent = "✅";
+      break;
+    case "unauthenticated":
+      elements.sessionStatus.classList.add("unauthenticated");
+      elements.statusIndicator.textContent = "⚠️";
+      break;
+    case "checking":
+    default:
+      elements.statusIndicator.textContent = "🔍";
+      break;
+  }
+
+  elements.statusText.textContent = message;
+}
+
+/**
+ * Show testing tools
+ */
+function showTestingTools() {
+  if (elements.testingTools) {
+    elements.testingTools.style.display = "block";
+  }
+}
+
+/**
+ * Hide testing tools
+ */
+function hideTestingTools() {
+  if (elements.testingTools) {
+    elements.testingTools.style.display = "none";
+  }
+}
+
+/**
+ * Testing function: Open new tab with same application
+ */
+function openNewTab() {
+  const currentUrl = window.location.href;
+  window.open(currentUrl, "_blank");
+  console.log("🆕 Opened new tab for session persistence testing");
+}
+
+/**
+ * Testing function: Open n8n directly in new tab
+ */
+function openDirectN8n() {
+  window.open(N8N_BASE_URL, "_blank");
+  console.log("🔗 Opened n8n directly for session testing");
+}
+
+/**
+ * Testing function: Check current cookies
+ */
+function checkCookies() {
+  const cookies = document.cookie.split(";").reduce((acc, cookie) => {
+    const [name, value] = cookie.trim().split("=");
+    acc[name] = value;
+    return acc;
+  }, {});
+
+  console.log("🍪 Current cookies:", cookies);
+
+  const cookieInfo =
+    Object.keys(cookies).length > 0
+      ? `Found ${Object.keys(cookies).length} cookies:\n${JSON.stringify(
+          cookies,
+          null,
+          2
+        )}`
+      : "No cookies found";
+
+  alert(`🍪 Cookie Information:\n\n${cookieInfo}`);
+}
+
+/**
+ * Testing function: Clear session and cookies
+ */
+async function clearSession() {
+  if (
+    confirm(
+      "Are you sure you want to clear the session? This will log you out."
+    )
+  ) {
+    // Clear all cookies
+    document.cookie.split(";").forEach(function (c) {
+      document.cookie = c
+        .replace(/^ +/, "")
+        .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+    });
+
+    // Reset application state
+    isAuthenticated = false;
+    updateSessionStatus("unauthenticated", "Session cleared");
+
+    // Go back to welcome screen if in iframe view
+    if (
+      elements.iframeContainer &&
+      elements.iframeContainer.style.display === "flex"
+    ) {
+      goBack();
+    }
+
+    console.log("🧹 Session cleared");
+    alert("Session cleared! You can now test fresh authentication.");
+  }
+}
+
+/**
+ * Enhanced go back function with session status update
+ */
+function goBackEnhanced() {
+  goBack();
+
+  // Update session status after going back
+  setTimeout(() => {
+    checkExistingSession();
+  }, 500);
+}
+
 // Global functions (for HTML onclick handlers)
 window.enterWorkflow = enterWorkflow;
-window.goBack = goBack;
+window.goBack = goBackEnhanced;
+window.openNewTab = openNewTab;
+window.openDirectN8n = openDirectN8n;
+window.checkCookies = checkCookies;
+window.clearSession = clearSession;

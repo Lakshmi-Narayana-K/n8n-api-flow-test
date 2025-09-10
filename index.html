@@ -16,7 +16,24 @@
         <div class="welcome-screen" id="welcomeScreen">
             <h1>Welcome to n8n</h1>
             <p>Access your automation workflows with a single click. Connect, automate, and streamline your processes effortlessly.</p>
+            
+            <!-- Session Status Card -->
+            <div class="session-status" id="sessionStatus">
+                <div class="status-indicator" id="statusIndicator">🔍</div>
+                <div class="status-text" id="statusText">Checking session...</div>
+            </div>
+            
             <button class="enter-btn" id="enterBtn" onclick="enterWorkflow()">Enter Workflow</button>
+            
+            <!-- Testing Tools -->
+            <div class="testing-tools" id="testingTools" style="display: none;">
+                <h3>🧪 Session Testing Tools</h3>
+                <button class="tool-btn" onclick="openNewTab()">Open New Tab</button>
+                <button class="tool-btn" onclick="openDirectN8n()">Open n8n Directly</button>
+                <button class="tool-btn" onclick="checkCookies()">Check Cookies</button>
+                <button class="tool-btn" onclick="clearSession()">Clear Session</button>
+            </div>
+            
             <div class="loading-spinner" id="loadingSpinner"></div>
             <div class="status-message" id="statusMessage"></div>
         </div>

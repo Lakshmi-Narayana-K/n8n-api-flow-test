@@ -132,6 +132,74 @@ body {
     100% { transform: rotate(360deg); }
 }
 
+/* Session Status Card */
+.session-status {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 15px;
+    padding: 15px 20px;
+    margin: 20px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    transition: all 0.3s ease;
+}
+
+.session-status.authenticated {
+    background: rgba(76, 175, 80, 0.2);
+    border-color: rgba(76, 175, 80, 0.4);
+}
+
+.session-status.unauthenticated {
+    background: rgba(255, 193, 7, 0.2);
+    border-color: rgba(255, 193, 7, 0.4);
+}
+
+.status-indicator {
+    font-size: 1.5rem;
+}
+
+.status-text {
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+/* Testing Tools */
+.testing-tools {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 20px 0;
+    text-align: center;
+}
+
+.testing-tools h3 {
+    color: white;
+    margin-bottom: 15px;
+    font-size: 1rem;
+    opacity: 0.9;
+}
+
+.tool-btn {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 8px 16px;
+    margin: 5px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.tool-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
 /* Status and Error Messages */
 .status-message {
     margin-top: 20px;
