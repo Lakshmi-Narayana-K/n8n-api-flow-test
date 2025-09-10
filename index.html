@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>n8n Workflow Interface</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <button class="back-btn" id="backBtn" style="display: none;" onclick="goBack()">← Back</button>
+            <h1 class="header-title">n8n Workflow Interface</h1>
+        </div>
+
+        <div class="welcome-screen" id="welcomeScreen">
+            <h1>Welcome to n8n</h1>
+            <p>Access your automation workflows with a single click. Connect, automate, and streamline your processes effortlessly.</p>
+            <button class="enter-btn" id="enterBtn" onclick="enterWorkflow()">Enter Workflow</button>
+            <div class="loading-spinner" id="loadingSpinner"></div>
+            <div class="status-message" id="statusMessage"></div>
+        </div>
+
+        <div class="error-message" id="errorMessage"></div>
+
+        <div class="iframe-container" id="iframeContainer">
+            <iframe class="workflow-iframe" id="workflowIframe" src=""></iframe>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="config.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

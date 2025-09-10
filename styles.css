@@ -1,0 +1,252 @@
+/* Reset and Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* Layout Components */
+.container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+.header {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    padding: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+
+.header-title {
+    color: white;
+    font-size: 1.5rem;
+    font-weight: 300;
+    opacity: 0.9;
+}
+
+.back-btn {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    position: absolute;
+    left: 20px;
+}
+
+.back-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* Welcome Screen */
+.welcome-screen {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    color: white;
+    padding: 40px;
+}
+
+.welcome-screen h1 {
+    font-size: 3rem;
+    margin-bottom: 20px;
+    font-weight: 300;
+    opacity: 0.9;
+}
+
+.welcome-screen p {
+    font-size: 1.2rem;
+    margin-bottom: 40px;
+    opacity: 0.8;
+    max-width: 600px;
+    line-height: 1.6;
+}
+
+/* Buttons */
+.enter-btn {
+    background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+    color: white;
+    border: none;
+    padding: 16px 48px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 30px rgba(255, 107, 107, 0.3);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.enter-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(255, 107, 107, 0.4);
+}
+
+.enter-btn:active {
+    transform: translateY(0);
+}
+
+.enter-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Loading Spinner */
+.loading-spinner {
+    display: none;
+    width: 50px;
+    height: 50px;
+    border: 4px solid rgba(255, 255, 255, 0.3);
+    border-top: 4px solid white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 20px auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Status and Error Messages */
+.status-message {
+    margin-top: 20px;
+    font-size: 0.9rem;
+    opacity: 0.8;
+    min-height: 20px;
+}
+
+.error-message {
+    display: none;
+    background: rgba(255, 87, 87, 0.9);
+    color: white;
+    padding: 15px;
+    margin: 20px;
+    border-radius: 8px;
+    text-align: center;
+    font-weight: 500;
+    box-shadow: 0 4px 20px rgba(255, 87, 87, 0.3);
+}
+
+/* Iframe Container */
+.iframe-container {
+    display: none;
+    flex: 1;
+    width: 100%;
+    height: calc(100vh - 80px);
+    position: relative;
+}
+
+.workflow-iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    background: white;
+    border-radius: 0 0 8px 8px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .welcome-screen h1 {
+        font-size: 2rem;
+    }
+    
+    .welcome-screen p {
+        font-size: 1rem;
+        padding: 0 20px;
+    }
+    
+    .enter-btn {
+        padding: 14px 32px;
+        font-size: 1rem;
+    }
+    
+    .header {
+        padding: 15px;
+    }
+    
+    .header-title {
+        font-size: 1.2rem;
+    }
+    
+    .back-btn {
+        padding: 8px 16px;
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .welcome-screen {
+        padding: 20px;
+    }
+    
+    .welcome-screen h1 {
+        font-size: 1.8rem;
+    }
+    
+    .enter-btn {
+        padding: 12px 24px;
+        font-size: 0.9rem;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .workflow-iframe {
+        background: #1a1a1a;
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .enter-btn {
+        border: 2px solid white;
+    }
+    
+    .back-btn {
+        border: 1px solid white;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .enter-btn {
+        transition: none;
+    }
+    
+    .back-btn {
+        transition: none;
+    }
+    
+    .loading-spinner {
+        animation: none;
+    }
+    
+    .enter-btn:hover {
+        transform: none;
+    }
+}
