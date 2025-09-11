@@ -6,6 +6,7 @@
 const express = require("express");
 const axios = require("axios");
 const path = require("path");
+const { N8N_API_CONFIG } = require("./config");
 
 const app = express();
 const PORT = 3000;
@@ -116,6 +117,10 @@ app.post("/api/login", async (req, res) => {
         console.log(`🍪 Set cookie: ${name}`);
       });
     }
+    console.log(
+      "🔗 Login response:",
+      JSON.stringify(loginResponse.data, null, 2)
+    );
 
     // Step 4: Return success response
     res.json({
@@ -197,6 +202,84 @@ app.get("/api/me", async (req, res) => {
 });
 
 /**
+ * Create new n8n user and get invitation link
+ */
+app.post("/api/signup", async (req, res) => {
+  const { email, role = "global:member" } = req.body;
+
+  if (!email) {
+    return res.status(400).json({
+      success: false,
+      error: "Email is required",
+    });
+  }
+
+  try {
+    console.log("👤 Creating new n8n user...");
+    console.log("📧 Email:", email);
+    console.log("🔐 Role:", role);
+
+    // Create user via n8n API
+    const response = await axios.post(
+      N8N_API_CONFIG.USERS_URL,
+      [{ email: email, role: role }],
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "X-N8N-API-KEY": N8N_API_CONFIG.API_KEY,
+        },
+        timeout: 10000,
+      }
+    );
+
+    console.log("✅ User creation successful!");
+    console.log("📨 Response data:", response.data);
+
+    // Extract the user data from response
+    const userData = response.data;
+
+    // Return the invitation data
+    res.json({
+      success: true,
+      message: "User created successfully",
+      data: userData,
+      inviteAcceptUrl: userData.user?.inviteAcceptUrl,
+    });
+  } catch (error) {
+    console.error("❌ User creation failed:", error.message);
+
+    let errorMessage = "Failed to create user";
+    let statusCode = 500;
+
+    if (error.code === "ECONNREFUSED") {
+      errorMessage =
+        "Cannot connect to n8n API server. Please check the configuration.";
+      statusCode = 503;
+    } else if (error.response?.status === 401) {
+      errorMessage = "Invalid API key or unauthorized access.";
+      statusCode = 401;
+    } else if (error.response?.status === 400) {
+      errorMessage = error.response.data?.message || "Invalid request data.";
+      statusCode = 400;
+    } else if (error.response?.status === 409) {
+      errorMessage = "User with this email already exists.";
+      statusCode = 409;
+    } else if (error.response?.status) {
+      errorMessage =
+        error.response.data?.message ||
+        `n8n API error: ${error.response.status}`;
+      statusCode = error.response.status;
+    }
+
+    res.status(statusCode).json({
+      success: false,
+      error: errorMessage,
+      details: error.response?.data || error.message,
+    });
+  }
+});
+
+/**
  * Health check endpoint
  */
 app.get("/api/health", (req, res) => {
@@ -222,6 +305,7 @@ app.listen(PORT, () => {
   console.log(`   GET  /                - Main application`);
   console.log(`   POST /api/login       - Proxy n8n login`);
   console.log(`   GET  /api/me          - Check session`);
+  console.log(`   POST /api/signup      - Create n8n user`);
   console.log(`   GET  /api/health      - Health check`);
   console.log("\n✅ Ready to proxy n8n requests!\n");
 });
