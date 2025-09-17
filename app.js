@@ -91,11 +91,12 @@ async function checkExistingSession() {
     });
 
     if (response.status === 200 && response.data.success) {
-      console.log("Existing session found, showing workflow iframe");
+      console.log("Existing session found, showing testing tools");
       isAuthenticated = true;
-      updateSessionStatus("authenticated", "Session active");
+      updateSessionStatus("authenticated", "Session active - Testing tools available");
       showTestingTools();
-      showWorkflowIframe();
+      // Commented out iframe to show testing tools
+      // showWorkflowIframe();
     } else {
       updateSessionStatus("unauthenticated", "No active session");
     }
@@ -121,13 +122,16 @@ async function enterWorkflow() {
     const authSuccess = await authenticateWithN8n();
 
     if (authSuccess) {
-      setLoadingState(true, "Authentication successful! Loading workflow...");
+      setLoadingState(true, "Authentication successful! Testing tools available...");
 
       // Small delay to ensure cookies are properly set
       await sleep(APP_CONFIG.UI.IFRAME_LOAD_DELAY);
 
       isAuthenticated = true;
-      showWorkflowIframe();
+      // Commented out iframe to show testing tools
+      // showWorkflowIframe();
+      updateSessionStatus("authenticated", "Session active - Testing tools available");
+      showTestingTools();
     }
   } catch (error) {
     console.error("Workflow entry failed:", error);
@@ -389,6 +393,7 @@ function updateSessionStatus(status, message) {
 function showTestingTools() {
   if (elements.testingTools) {
     elements.testingTools.style.display = "block";
+    console.log("🧪 Testing tools are now visible - you can test the Personal Project API!");
   }
 }
 
@@ -443,6 +448,61 @@ function checkCookies() {
 }
 
 /**
+ * Testing function: Get personal project details
+ */
+async function getPersonalProjectDetails() {
+  try {
+    console.log("🔍 Fetching personal project details...");
+    
+    const response = await axios.get(PROXY_PERSONAL_PROJECT_ENDPOINT, {
+      ...DEFAULT_AXIOS_CONFIG,
+      timeout: APP_CONFIG.TIMEOUTS.LOGIN,
+    });
+    
+
+    if (response.data && response.data.success) {
+      console.log("✅ Personal project details retrieved successfully!");
+      console.log("📊 Project Data:", JSON.stringify(response.data.data, null, 2));
+      
+      // Display project details in an alert for easy viewing
+      const projectData = response.data.data;
+      const projectInfo = `
+🏗️ Personal Project Details:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 ID: ${projectData.id}
+📝 Name: ${projectData.name}
+🏷️ Type: ${projectData.type}
+📅 Created: ${new Date(projectData.createdAt).toLocaleString()}
+🔄 Updated: ${new Date(projectData.updatedAt).toLocaleString()}
+📄 Description: ${projectData.description || 'No description'}
+🎯 Scopes: ${projectData.scopes ? projectData.scopes.join(', ') : 'No scopes'}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      `;
+      
+      alert(projectInfo);
+    } else {
+      throw new Error(response.data?.error || "Failed to fetch project details");
+    }
+  } catch (error) {
+    console.error("❌ Failed to fetch personal project details:", error);
+    
+    let errorMessage = "Failed to fetch personal project details. ";
+    
+    if (error.response?.status === 401) {
+      errorMessage += "Please ensure you are logged in.";
+    } else if (error.response?.status === 403) {
+      errorMessage += "Insufficient permissions.";
+    } else if (error.response?.status === 404) {
+      errorMessage += "Personal project not found.";
+    } else {
+      errorMessage += error.message || "Unknown error occurred.";
+    }
+    
+    alert(`❌ Error: ${errorMessage}`);
+  }
+}
+
+/**
  * Testing function: Clear session and cookies
  */
 async function clearSession() {
@@ -493,4 +553,5 @@ window.goBack = goBackEnhanced;
 window.openNewTab = openNewTab;
 window.openDirectN8n = openDirectN8n;
 window.checkCookies = checkCookies;
+window.getPersonalProjectDetails = getPersonalProjectDetails;
 window.clearSession = clearSession;
