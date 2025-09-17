@@ -456,7 +456,7 @@ async function getPersonalProjectDetails() {
     
     const response = await axios.get(PROXY_PERSONAL_PROJECT_ENDPOINT, {
       ...DEFAULT_AXIOS_CONFIG,
-      timeout: APP_CONFIG.TIMEOUTS.LOGIN,
+      timeout: APP_CONFIG.TIMEOUTS.LOGIN
     });
     
 
@@ -479,7 +479,6 @@ async function getPersonalProjectDetails() {
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
       `;
       
-      alert(projectInfo);
     } else {
       throw new Error(response.data?.error || "Failed to fetch project details");
     }
@@ -564,7 +563,6 @@ async function createWorkflow() {
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
       `;
       
-      alert(workflowInfo);
       
       // Store workflow ID globally for import function
       window.currentWorkflowId = workflowData.id;
@@ -593,7 +591,7 @@ async function createWorkflow() {
 }
 
 /**
- * Testing function: Import workflow from GitHub URL
+ * Testing function: Import workflow content into existing workflow
  */
 async function importWorkflowFromURL() {
   try {
@@ -602,12 +600,14 @@ async function importWorkflowFromURL() {
       return;
     }
 
-    console.log("🔍 Importing workflow from GitHub URL...");
+    console.log("🔍 Importing workflow content into existing workflow...");
     console.log("📋 Target Workflow ID:", window.currentWorkflowId);
+    
+    const importUrl = "https://raw.githubusercontent.com/n8n-io/self-hosted-ai-starter-kit/refs/heads/main/n8n/demo-data/workflows/srOnR8PAY3u4RSwb.json";
     
     const importPayload = {
       workflowId: window.currentWorkflowId,
-      url: "https://raw.githubusercontent.com/n8n-io/self-hosted-ai-starter-kit/refs/heads/main/n8n/demo-data/workflows/srOnR8PAY3u4RSwb.json"
+      url: importUrl
     };
 
     console.log("📤 Sending workflow import request...");
@@ -618,25 +618,26 @@ async function importWorkflowFromURL() {
     });
 
     if (response.data && response.data.success) {
-      console.log("✅ Workflow imported successfully!");
-      console.log("📊 Imported Data:", JSON.stringify(response.data.data, null, 2));
+      console.log("✅ Workflow updated with imported content successfully!");
+      console.log("📊 Updated Workflow Data:", JSON.stringify(response.data.data, null, 2));
       
-      const importedData = response.data.data;
+      const updatedData = response.data.data;
       const importInfo = `
-🎯 Workflow Imported Successfully:
+🎯 Workflow Updated Successfully:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📋 Workflow ID: ${importedData.id}
-📝 Name: ${importedData.name}
-🏷️ Active: ${importedData.active}
-📅 Updated: ${new Date(importedData.updatedAt).toLocaleString()}
-🔗 Nodes Count: ${importedData.nodes ? importedData.nodes.length : 0}
+📋 Workflow ID: ${updatedData.id}
+📝 Name: ${updatedData.name}
+🏷️ Active: ${updatedData.active}
+📅 Updated: ${new Date(updatedData.updatedAt).toLocaleString()}
+🔗 Nodes Count: ${updatedData.nodes ? updatedData.nodes.length : 0}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
       `;
       
-      alert(importInfo);
       
-      // Show open workflow button
-      showOpenWorkflowButton();
+      // Automatically open the updated workflow in n8n
+      setTimeout(() => {
+        openWorkflowInN8n();
+      }, 1000); // Small delay to let user see the success message
       
     } else {
       throw new Error(response.data?.error || "Failed to import workflow");
@@ -655,6 +656,75 @@ async function importWorkflowFromURL() {
     }
     
     alert(`❌ Error: ${errorMessage}`);
+  }
+}
+
+/**
+ * Testing function: Import demo workflow into existing workflow ID
+ */
+async function importDemoIntoExistingWorkflow() {
+  try {
+    const existingWorkflowId = "db0ZGZ8A7qr9aVWV";
+    console.log("🔍 Importing demo workflow into existing workflow...");
+    console.log("📋 Target Workflow ID:", existingWorkflowId);
+    
+    const importUrl = "https://raw.githubusercontent.com/n8n-io/self-hosted-ai-starter-kit/refs/heads/main/n8n/demo-data/workflows/srOnR8PAY3u4RSwb.json";
+    
+    const importPayload = {
+      workflowId: existingWorkflowId,
+      url: importUrl
+    };
+
+    console.log("📤 Sending workflow import request...");
+    
+    const response = await axios.post(PROXY_IMPORT_WORKFLOW_ENDPOINT, importPayload, {
+      ...DEFAULT_AXIOS_CONFIG,
+      timeout: APP_CONFIG.TIMEOUTS.LOGIN,
+    });
+
+    if (response.data && response.data.success) {
+      console.log("✅ Workflow updated with imported content successfully!");
+      console.log("📊 Updated Workflow Data:", JSON.stringify(response.data.data, null, 2));
+      
+      const updatedData = response.data.data;
+      const importInfo = `
+🎯 Workflow Updated Successfully:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 Workflow ID: ${updatedData.id}
+📝 Name: ${updatedData.name}
+🏷️ Active: ${updatedData.active}
+📅 Updated: ${new Date(updatedData.updatedAt).toLocaleString()}
+🔗 Nodes Count: ${updatedData.nodes ? updatedData.nodes.length : 0}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      `;
+      
+      console.log(importInfo);
+      
+      // Store the workflow ID globally
+      window.currentWorkflowId = updatedData.id;
+      
+      // Automatically open the updated workflow in n8n
+      setTimeout(() => {
+        openWorkflowInN8n();
+      }, 1000);
+      
+    } else {
+      throw new Error(response.data?.error || "Failed to import workflow");
+    }
+  } catch (error) {
+    console.error("❌ Failed to import workflow:", error);
+    
+    let errorMessage = "Failed to import workflow. ";
+    
+    if (error.response?.status === 401) {
+      errorMessage += "Please ensure you are logged in.";
+    } else if (error.response?.status === 403) {
+      errorMessage += "Insufficient permissions.";
+    } else {
+      errorMessage += error.message || "Unknown error occurred.";
+    }
+    
+    console.error(`❌ Error: ${errorMessage}`);
   }
 }
 
@@ -688,7 +758,7 @@ function showImportButton() {
   if (testingTools) {
     const importButton = document.createElement('button');
     importButton.className = 'tool-btn';
-    importButton.textContent = 'Import Workflow from URL';
+    importButton.textContent = 'Import & Open Demo Workflow';
     importButton.onclick = importWorkflowFromURL;
     importButton.style.backgroundColor = '#28a745';
     importButton.style.color = 'white';

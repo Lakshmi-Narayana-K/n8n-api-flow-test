@@ -411,7 +411,7 @@ app.post("/api/workflows", async (req, res) => {
 });
 
 /**
- * Proxy workflow import endpoint
+ * Proxy workflow import from URL endpoint - updates existing workflow
  */
 app.post("/api/workflows/import", async (req, res) => {
   try {
@@ -437,41 +437,47 @@ app.post("/api/workflows/import", async (req, res) => {
       });
     }
 
-    console.log("🔍 Importing workflow from URL...");
-    console.log("📋 Workflow ID:", workflowId);
+    console.log("🔍 Importing workflow content into existing workflow...");
+    console.log("📋 Target Workflow ID:", workflowId);
     console.log("🔗 Import URL:", url);
 
-    // First, fetch the workflow data from the URL
-    const workflowResponse = await axios.get(url, {
+    // Step 1: Import data from URL using n8n's from-url endpoint
+    console.log("📥 Fetching workflow data from URL...");
+    const { data: importedData } = await axios.get(`${N8N_BASE_URL}/rest/workflows/from-url`, {
+      headers: { 
+        Cookie: `n8n-auth=${authCookie}`,
+        Accept: "application/json"
+      },
+      params: { url },
       timeout: 10000,
     });
 
-    const workflowData = workflowResponse.data;
-    console.log("📊 Fetched workflow data:", JSON.stringify(workflowData, null, 2));
+    console.log("📊 Imported workflow data:", JSON.stringify(importedData, null, 2));
 
-    // Update the workflow with the imported data
-    const updatePayload = {
-      ...workflowData,
-      id: workflowId, // Ensure we're updating the correct workflow
-    };
-
-    // Forward update request to n8n
-    const response = await axios.put(`${N8N_BASE_URL}/api/v1/workflows/${workflowId}`, updatePayload, {
-      headers: {
+    // Step 2: Update your workflow with imported data using PATCH
+    console.log("📤 Updating workflow with imported content...");
+    const { data: updatedWorkflow } = await axios.patch(`${N8N_BASE_URL}/rest/workflows/${workflowId}`, {
+      name: importedData.data.name,
+      nodes: importedData.data.nodes,
+      connections: importedData.data.connections,
+      settings: importedData.data.settings,
+      active: false
+    }, {
+      headers: { 
         Cookie: `n8n-auth=${authCookie}`,
         "Content-Type": "application/json",
-        Accept: "application/json",
+        Accept: "application/json"
       },
       timeout: 10000,
     });
 
-    console.log("✅ Workflow imported successfully");
-    console.log("📊 Response data:", JSON.stringify(response.data, null, 2));
+    console.log("✅ Workflow updated with imported content successfully");
+    console.log("📊 Updated workflow data:", JSON.stringify(updatedWorkflow, null, 2));
 
     res.json({
       success: true,
-      data: response.data.data,
-      status: response.status,
+      data: updatedWorkflow,
+      status: 200,
     });
   } catch (error) {
     console.error("❌ Workflow import failed:", error.message);
@@ -530,7 +536,7 @@ app.listen(PORT, () => {
   console.log(`   GET  /api/projects/personal - Get personal project details`);
   console.log(`   POST /api/signup      - Create n8n user`);
   console.log(`   POST /api/workflows   - Create new workflow`);
-  console.log(`   POST /api/workflows/import - Import workflow from URL`);
+  console.log(`   POST /api/workflows/import - Import workflow content into existing workflow`);
   console.log(`   GET  /api/health      - Health check`);
   console.log("\n✅ Ready to proxy n8n requests!\n");
 });
