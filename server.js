@@ -290,6 +290,7 @@ app.get("/api/projects/personal", async (req, res) => {
       .find((c) => c.trim().startsWith("n8n-auth="))
       ?.split("=")[1];
 
+    console.log("🔍 Auth cookie:", authCookie);
     if (!authCookie) {
       return res.status(401).json({
         success: false,
@@ -346,6 +347,161 @@ app.get("/api/projects/personal", async (req, res) => {
 });
 
 /**
+ * Proxy workflow creation endpoint
+ */
+app.post("/api/workflows", async (req, res) => {
+  try {
+    // Extract n8n-auth cookie from request
+    const authCookie = req.headers.cookie
+      ?.split(";")
+      .find((c) => c.trim().startsWith("n8n-auth="))
+      ?.split("=")[1];
+
+    if (!authCookie) {
+      return res.status(401).json({
+        success: false,
+        error: "No authentication cookie found",
+      });
+    }
+
+    console.log("🔍 Creating workflow...");
+    console.log("📊 Workflow payload:", JSON.stringify(req.body, null, 2));
+
+    // Forward request to n8n with cookie
+    const response = await axios.post(`${N8N_BASE_URL}/rest/workflows`, req.body, {
+      headers: {
+        Cookie: `n8n-auth=${authCookie}`,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      timeout: 10000,
+    });
+
+    console.log("✅ Workflow created successfully");
+    console.log("📊 Response data:", JSON.stringify(response.data, null, 2));
+
+    res.json({
+      success: true,
+      data: response.data.data,
+      status: response.status,
+    });
+  } catch (error) {
+    console.error("❌ Workflow creation failed:", error.message);
+
+    let errorMessage = "Failed to create workflow";
+    let statusCode = 500;
+
+    if (error.response?.status === 401) {
+      errorMessage = "Authentication required or session expired";
+      statusCode = 401;
+    } else if (error.response?.status === 403) {
+      errorMessage = "Insufficient permissions to create workflow";
+      statusCode = 403;
+    } else if (error.response?.status) {
+      errorMessage = error.response.data?.message || `n8n server error: ${error.response.status}`;
+      statusCode = error.response.status;
+    }
+
+    res.status(statusCode).json({
+      success: false,
+      error: errorMessage,
+      details: error.response?.data || error.message,
+    });
+  }
+});
+
+/**
+ * Proxy workflow import endpoint
+ */
+app.post("/api/workflows/import", async (req, res) => {
+  try {
+    // Extract n8n-auth cookie from request
+    const authCookie = req.headers.cookie
+      ?.split(";")
+      .find((c) => c.trim().startsWith("n8n-auth="))
+      ?.split("=")[1];
+
+    if (!authCookie) {
+      return res.status(401).json({
+        success: false,
+        error: "No authentication cookie found",
+      });
+    }
+
+    const { workflowId, url } = req.body;
+
+    if (!workflowId || !url) {
+      return res.status(400).json({
+        success: false,
+        error: "Missing required fields: workflowId and url",
+      });
+    }
+
+    console.log("🔍 Importing workflow from URL...");
+    console.log("📋 Workflow ID:", workflowId);
+    console.log("🔗 Import URL:", url);
+
+    // First, fetch the workflow data from the URL
+    const workflowResponse = await axios.get(url, {
+      timeout: 10000,
+    });
+
+    const workflowData = workflowResponse.data;
+    console.log("📊 Fetched workflow data:", JSON.stringify(workflowData, null, 2));
+
+    // Update the workflow with the imported data
+    const updatePayload = {
+      ...workflowData,
+      id: workflowId, // Ensure we're updating the correct workflow
+    };
+
+    // Forward update request to n8n
+    const response = await axios.put(`${N8N_BASE_URL}/api/v1/workflows/${workflowId}`, updatePayload, {
+      headers: {
+        Cookie: `n8n-auth=${authCookie}`,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      timeout: 10000,
+    });
+
+    console.log("✅ Workflow imported successfully");
+    console.log("📊 Response data:", JSON.stringify(response.data, null, 2));
+
+    res.json({
+      success: true,
+      data: response.data.data,
+      status: response.status,
+    });
+  } catch (error) {
+    console.error("❌ Workflow import failed:", error.message);
+
+    let errorMessage = "Failed to import workflow";
+    let statusCode = 500;
+
+    if (error.response?.status === 401) {
+      errorMessage = "Authentication required or session expired";
+      statusCode = 401;
+    } else if (error.response?.status === 403) {
+      errorMessage = "Insufficient permissions to import workflow";
+      statusCode = 403;
+    } else if (error.response?.status === 404) {
+      errorMessage = "Workflow not found";
+      statusCode = 404;
+    } else if (error.response?.status) {
+      errorMessage = error.response.data?.message || `n8n server error: ${error.response.status}`;
+      statusCode = error.response.status;
+    }
+
+    res.status(statusCode).json({
+      success: false,
+      error: errorMessage,
+      details: error.response?.data || error.message,
+    });
+  }
+});
+
+/**
  * Health check endpoint
  */
 app.get("/api/health", (req, res) => {
@@ -373,6 +529,8 @@ app.listen(PORT, () => {
   console.log(`   GET  /api/me          - Check session`);
   console.log(`   GET  /api/projects/personal - Get personal project details`);
   console.log(`   POST /api/signup      - Create n8n user`);
+  console.log(`   POST /api/workflows   - Create new workflow`);
+  console.log(`   POST /api/workflows/import - Import workflow from URL`);
   console.log(`   GET  /api/health      - Health check`);
   console.log("\n✅ Ready to proxy n8n requests!\n");
 });

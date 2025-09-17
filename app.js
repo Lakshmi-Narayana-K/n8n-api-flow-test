@@ -503,6 +503,216 @@ async function getPersonalProjectDetails() {
 }
 
 /**
+ * Testing function: Create a new workflow
+ */
+async function createWorkflow() {
+  try {
+    console.log("🔍 Creating new workflow...");
+    
+    // First get the personal project details to get the project ID
+    const projectResponse = await axios.get(PROXY_PERSONAL_PROJECT_ENDPOINT, {
+      ...DEFAULT_AXIOS_CONFIG,
+      timeout: APP_CONFIG.TIMEOUTS.LOGIN,
+    });
+
+    if (!projectResponse.data || !projectResponse.data.success) {
+      throw new Error("Failed to get personal project details");
+    }
+
+    console.log("📋 Project response:", JSON.stringify(projectResponse.data, null, 2));
+
+    const projectId = projectResponse.data.data.data.id;
+    console.log("📋 Using project ID:", projectId);
+    console.log("📋 Project ID type:", typeof projectId);
+    console.log("📋 Project ID value:", JSON.stringify(projectId));
+
+    // Create workflow payload
+    const workflowPayload = {
+      name: "My workflow 2",
+      nodes: [],
+      connections: {},
+      active: false,
+      settings: {
+        executionOrder: "v1"
+      },
+      tags: [],
+      projectId: projectId
+    };
+
+    console.log("📤 Workflow payload:", JSON.stringify(workflowPayload, null, 2));
+    console.log("📤 Sending workflow creation request...");
+    
+    const response = await axios.post(PROXY_CREATE_WORKFLOW_ENDPOINT, workflowPayload, {
+      ...DEFAULT_AXIOS_CONFIG,
+      timeout: APP_CONFIG.TIMEOUTS.LOGIN,
+    });
+
+    if (response.data && response.data.success) {
+      console.log("✅ Workflow created successfully!");
+      console.log("📊 Workflow Data:", JSON.stringify(response.data.data, null, 2));
+      
+      const workflowData = response.data.data;
+      const workflowInfo = `
+🎯 New Workflow Created:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 Workflow ID: ${workflowData.id}
+📝 Name: ${workflowData.name}
+🏷️ Active: ${workflowData.active}
+📅 Created: ${new Date(workflowData.createdAt).toLocaleString()}
+🔄 Updated: ${new Date(workflowData.updatedAt).toLocaleString()}
+🏗️ Project: ${workflowData.homeProject.name}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      `;
+      
+      alert(workflowInfo);
+      
+      // Store workflow ID globally for import function
+      window.currentWorkflowId = workflowData.id;
+      
+      // Show import button
+      showImportButton();
+      
+    } else {
+      throw new Error(response.data?.error || "Failed to create workflow");
+    }
+  } catch (error) {
+    console.error("❌ Failed to create workflow:", error);
+    
+    let errorMessage = "Failed to create workflow. ";
+    
+    if (error.response?.status === 401) {
+      errorMessage += "Please ensure you are logged in.";
+    } else if (error.response?.status === 403) {
+      errorMessage += "Insufficient permissions.";
+    } else {
+      errorMessage += error.message || "Unknown error occurred.";
+    }
+    
+    alert(`❌ Error: ${errorMessage}`);
+  }
+}
+
+/**
+ * Testing function: Import workflow from GitHub URL
+ */
+async function importWorkflowFromURL() {
+  try {
+    if (!window.currentWorkflowId) {
+      alert("❌ Please create a workflow first!");
+      return;
+    }
+
+    console.log("🔍 Importing workflow from GitHub URL...");
+    console.log("📋 Target Workflow ID:", window.currentWorkflowId);
+    
+    const importPayload = {
+      workflowId: window.currentWorkflowId,
+      url: "https://raw.githubusercontent.com/n8n-io/self-hosted-ai-starter-kit/refs/heads/main/n8n/demo-data/workflows/srOnR8PAY3u4RSwb.json"
+    };
+
+    console.log("📤 Sending workflow import request...");
+    
+    const response = await axios.post(PROXY_IMPORT_WORKFLOW_ENDPOINT, importPayload, {
+      ...DEFAULT_AXIOS_CONFIG,
+      timeout: APP_CONFIG.TIMEOUTS.LOGIN,
+    });
+
+    if (response.data && response.data.success) {
+      console.log("✅ Workflow imported successfully!");
+      console.log("📊 Imported Data:", JSON.stringify(response.data.data, null, 2));
+      
+      const importedData = response.data.data;
+      const importInfo = `
+🎯 Workflow Imported Successfully:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 Workflow ID: ${importedData.id}
+📝 Name: ${importedData.name}
+🏷️ Active: ${importedData.active}
+📅 Updated: ${new Date(importedData.updatedAt).toLocaleString()}
+🔗 Nodes Count: ${importedData.nodes ? importedData.nodes.length : 0}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      `;
+      
+      alert(importInfo);
+      
+      // Show open workflow button
+      showOpenWorkflowButton();
+      
+    } else {
+      throw new Error(response.data?.error || "Failed to import workflow");
+    }
+  } catch (error) {
+    console.error("❌ Failed to import workflow:", error);
+    
+    let errorMessage = "Failed to import workflow. ";
+    
+    if (error.response?.status === 401) {
+      errorMessage += "Please ensure you are logged in.";
+    } else if (error.response?.status === 403) {
+      errorMessage += "Insufficient permissions.";
+    } else {
+      errorMessage += error.message || "Unknown error occurred.";
+    }
+    
+    alert(`❌ Error: ${errorMessage}`);
+  }
+}
+
+/**
+ * Testing function: Open workflow in n8n
+ */
+async function openWorkflowInN8n() {
+  try {
+    if (!window.currentWorkflowId) {
+      alert("❌ No workflow ID available!");
+      return;
+    }
+
+    const workflowUrl = `${N8N_BASE_URL}/workflow/${window.currentWorkflowId}`;
+    console.log("🔗 Opening workflow URL:", workflowUrl);
+    
+    // Open in new tab
+    window.open(workflowUrl, '_blank');
+    
+  } catch (error) {
+    console.error("❌ Failed to open workflow:", error);
+    alert(`❌ Error: ${error.message}`);
+  }
+}
+
+/**
+ * Show import button after workflow creation
+ */
+function showImportButton() {
+  const testingTools = document.getElementById('testingTools');
+  if (testingTools) {
+    const importButton = document.createElement('button');
+    importButton.className = 'tool-btn';
+    importButton.textContent = 'Import Workflow from URL';
+    importButton.onclick = importWorkflowFromURL;
+    importButton.style.backgroundColor = '#28a745';
+    importButton.style.color = 'white';
+    testingTools.appendChild(importButton);
+  }
+}
+
+/**
+ * Show open workflow button after import
+ */
+function showOpenWorkflowButton() {
+  const testingTools = document.getElementById('testingTools');
+  if (testingTools) {
+    const openButton = document.createElement('button');
+    openButton.className = 'tool-btn';
+    openButton.textContent = 'Open Workflow in n8n';
+    openButton.onclick = openWorkflowInN8n;
+    openButton.style.backgroundColor = '#007bff';
+    openButton.style.color = 'white';
+    testingTools.appendChild(openButton);
+  }
+}
+
+/**
  * Testing function: Clear session and cookies
  */
 async function clearSession() {
